@@ -1,0 +1,8 @@
+export(rmvnorm)
+export(rmvzinegbin)
+export(rmvzipois)
+export(rzipois)
+importFrom(VGAM,qzipois)
+importFrom(stats,dpois)
+importFrom(stats,qpois)
+importFrom(stats,runif)

@@ -1,0 +1,14 @@
+Package: codmeR
+Title: COmpositional Data analysis tools for Microbial Ecology in R
+Description: Code for estimating covariance and proportionality networks from
+    population data, ie - relative abundances, as measured by 16S sequencing,
+    over a cross section of a sample population
+Version: 0.1
+Authors@R: c(person("Zachary", "Kurtz", role = c("aut", "cre"),
+    email="zachary.kurtz@med.nyu.edu"), person("Christian", "Mueller", role =
+    c("aut")), person("Emily", "Miraldi", role=c("aut")), person("Richard",
+    "Bonneau", role=c("aut")))
+Depends:
+    R (>= 3.0.2)
+License: # getOptions('devtools.desc.license')
+LazyData: true
