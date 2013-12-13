@@ -86,14 +86,16 @@ rzipois <- function(n, lambda, pstr0 = 0) {
 #' @importFrom VGAM qzipois
 #' @export
 rmvzipois <- function(n, mu, Sigma, lambdas, ps, ...) {
-    d   <- length(mu)
     Cor <- cov2cor(Sigma)
     SDs <- sqrt(diag(Sigma))
 
     if (missing(lambdas) || missing(ps)) {
+        if (missing(mu)) stop("Need to supply mu")
+        if (length(mu) != length(SDs)) stop("Sigma and mu dimensions don't match")
         lambdas <- unlist(lapply(1:length(SDs), function(i) .zipois_getLam(mu[i], SDs[i])))
         ps   <- unlist(lapply(1:length(SDs), function(i) .zipois_getP(mu[i], SDs[i])))
     }
+    if (length(lambdas) != length(SDs)) stop("Sigma and mu/lambdas dimensions don't match")
     if (length(mu) == 1) stop("Need more than 1 variable")
     normd  <- rmvnorm(n, rep(0, d), Cor)
     unif   <- pnorm(normd)
@@ -206,13 +208,17 @@ rmvzinegbin <- function(n, mu, Sigma, munbs, ps, ks, ...) {
 # with counts approximately correlated according to Sigma
     Cor <- cov2cor(Sigma)
     SDs <- sqrt(diag(Sigma))
+
     if (missing(munbs) || missing(ps) || missing(ks)) {
         if (missing(mu)) stop('mu is required')
+        if (length(mu) != length(SDs)) stop("Sigma and mu dimensions don't match")
         munbs <- unlist(lapply(1:length(SDs), function(i) .zinegbin_getLam(mu[i], SDs[i])))
         ps   <- unlist(lapply(1:length(SDs), function(i) .zinegbin_getP(mu[i], munbs[i])))
         ks   <- unlist(lapply(1:length(SDs), function(i) .zinegbin_getK(mu[i], SDs[i], munbs[i])))
     }
-    normd  <- rmvnorm(n, rep(0, length(munbs)), Sigma=Cor)
+    if (length(munbs) != length(SDs)) stop("Sigma and mu dimensions don't match")
+    d   <- length(munbs)
+    normd  <- rmvnorm(n, rep(0, d), Sigma=Cor)
     unif   <- pnorm(normd)
     data <- t(VGAM::qzinegbin(t(unif), munb=munbs, size=ks, pstr0=ps, ...))
     data <- .fixInf(data)
