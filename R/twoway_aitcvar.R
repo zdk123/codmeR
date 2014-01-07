@@ -12,7 +12,7 @@ proportionality_filter <- function(data, normfun=function(x) x, nboots=1333,
     if (mar == 1) data <- t(data)
     d <- ncol(data)
     n <- nrow(data)
-    pobjs <- tavboot(data, .astat, .pstat, R=nboots, ...)
+    pobjs <- tavboot(data, .astat, .pstat, R=nboots, ncpus=n.core, ...)
     pvals <- pval(pobjs)
     pmat    <- triu2diag(pvals)
     rownames(pmat) <- colnames(pmat) <- colnames(data)
@@ -39,9 +39,9 @@ pval <- function(x) {
 
 #' @keywords internal
 #' @importFrom boot boot
-tavboot <- function(data, statisticboot=astat, statisticperm, R, ...) {
-    res     <- boot::boot(data, statisticboot, R=R, parallel="multicore", ncpus=3, ...)
-    null_av <- boot::boot(data, statisticperm, sim='permutation', R=R, parallel="multicore", ncpus=3)
+tavboot <- function(data, statisticboot=astat, statisticperm, R, ncpus, ...) {
+    res     <- boot::boot(data, statisticboot, R=R, parallel="multicore", ncpus=ncpus, ...)
+    null_av <- boot::boot(data, statisticperm, sim='permutation', R=R, parallel="multicore", ncpus=ncpus)
     class(res) <- 'list'
     structure(c(res, list(null_av=null_av)), class='tavboot')
 }
@@ -52,13 +52,25 @@ pval.tavboot <- function(x, sided='both', mar=2) {
 # Args: a boot object
     if (sided != "both") stop("only two-sided currently supported")
     nparams  <- ncol(x$t)
-    tmeans   <- colMeans(x$null_av$t);
+    tmeans   <- colMeans(x$null_av$t)
+#    check to see whether Aitchison variance is unstable -- confirm 
+#    that sample Aitchison variance is in 95% confidence interval of 
+#    bootstrapped samples
+    niters   <- nrow(x$t)
+    ind95    <- max(1,round(.025*niters)):round(.975*niters)
+    boot_ord <- apply(x$t, 2, sort)
+    boot_ord95 <- boot_ord[ind95,]
+    outofrange <- unlist(lapply(1:length(x$t0), function(i) {
+            aitvar <- x$t0[i]
+            range  <- range(boot_ord95[,i])
+            range[1] > aitvar || range[2] < aitvar
+        }))
     # calc whether center of mass is above or below the mean
     bs_above <- unlist(lapply(1:nparams, function(i) 
                     length(which(x$t[, i] > tmeans[i]))))
     pval <- ifelse(bs_above > x$R/2, 2*(1-bs_above/x$R), 2*bs_above/x$R)
-    gt1  <- which(pval > 1)
-    if (length(gt1) > 0) pval[gt1] <- 1
+    pval[pval > 1] <- 1
+    pval[outofrange] <- NaN
    # triu2diag(pval)
    pval
 }
@@ -71,7 +83,7 @@ aitvar <- function(x, ...) {
 #' @export
 aitvar.default <- function(x, y) {
     if (length(x) != length(y)) stop('Error: data must be of same dimension')
-    var(log(x/y))
+    T(x, y)
 }
 
 #' compute aitchison variation of a matrix
@@ -79,7 +91,6 @@ aitvar.default <- function(x, y) {
 #' @import Rcpp
 #' @export
 aitvar.matrix <- function(x, mar=2) {
-    if (!("fastaitvar" %in% ls())) sourceCpp("fastaitvar.cpp")
     avmat <- fastaitvar(x)
     colnames(avmat) <- rownames(avmat) <- colnames(x)
     avmat

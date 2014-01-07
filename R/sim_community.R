@@ -33,59 +33,59 @@ fitfn_fixed <- function(y, x, neff) {
 }
 
 
-#' Simulate count data 
-#'
+#' Simulate count data from various theoretical distributions
+#' 
 #'   @param n -> number of samples
 #'   @param mu -> vector of 'OTU' means across samples
 #'   @param Sigma -> positive definite matrix, one will be generated if not provided
-#'   @param negscheme -> function to deal with negative values
+#'   @param negscheme -> function to deal with negative values (for method MVLN data)
 #'   @note required: length(mu) == nrow(Sigma) == ncol(Sigma)
 #'   @export
-sim_counts <- function(n = 1, mu, Sigma=NULL, method='ZIP', negscheme=exp, targetneff, ...) {
+sim_counts <- function(n = 1, mu, Sigma=NULL, method='ZINB', negscheme=exp, targetneff, ...) {
 
-if (method == 'MVLN') { 
-    require(MASS)
-    corpar=as.matrix(Sigma)
-    Y <- negscheme(mvrnorm(n, mu, Sigma))
-
-} else if (method == "Poi") {
-
-    require(corcounts)
-    margins <- rep("Poi", length(mu))
-    corstr <- 'unstr'
+    if (method == 'MVLN') { 
+        require(MASS)
+        corpar=as.matrix(Sigma)
+        Y <- negscheme(mvrnorm(n, mu, Sigma))
     
-    if (length(Sigma) == 0) {
-        corpar <- unstructured(length(mu))
+# Deprecated function
+#   } else if (method == "Poi") {
+#        require(corcounts)
+#        margins <- rep("Poi", length(mu))
+#        corstr <- 'unstr'
+#        
+#        if (length(Sigma) == 0) {
+#            corpar <- unstructured(length(mu))
+#        } else {
+#            corpar <- as.matrix(Sigma)
+#        }
+#       Y <- rcounts(N=n, margins=margins, mu=mu, corstr=corstr, corpar=corpar)
+
+# TODO: implement non-zero inflated versions
+    } else if (method == "MN") {
+        Y <- negscheme(multivnomial(n, mu, as.matrix(Sigma)))
+    
+    } else if (method == "ZIP") {
+        Y <- rmvzipois(n, mu, Sigma, ...)
+    
+    } else if (method == "Poi") {
+        Y <- rmvpois(n, mu, Sigma, ...)
+
+    } else if (method == "ZINB") {
+        Y <- rmvzinegbin(n, mu, Sigma, ...)
+
+    } else if (method == "NegBin") {
+        Y <- rmvnegbin(n, mu, Sigma, ...)
     } else {
-        corpar <- as.matrix(Sigma)
+        stop(paste("Error: method ", methodm, " not supported", sep=""))
     }
-
-    Y <- rcounts(N=n, margins=margins, mu=mu, corstr=corstr, corpar=corpar)
-    
-} else if (method == "MN") {
-    Y <- negscheme(multivnomial(n, mu, as.matrix(Sigma)))
-    
-} else if (method == "ZIP") {
-    Y <- zi_distr("zipois", n, mu, Sigma, ...)
-    
-} else if (method == "ZINB") {
-    Y <- zi_distr("zinegbin", n, mu, Sigma, ...)
-} else {
-    stop("Error: method not supported")
-}
 
     list(data=as.matrix(Y), empcor=cor(Y), incor=as.matrix(Sigma))
 }
 
 
-multivnomial <- function(n, mu, Sigma) {
-    N <- sum(mu)
-    data <- rmultinom(n, N, mu/N)
-    c <- as.matrix(chol(Sigma))
-    t(data) %*% c
-}
-
-#' @export
+#' deprecated covariance generator
+#' @keywords internal
 unsparseSigma <- function(dimension, avecor=0.5, sparsity=0.5) {
 
     require(msm) ; require(Matrix)
@@ -100,9 +100,7 @@ unsparseSigma <- function(dimension, avecor=0.5, sparsity=0.5) {
 
 #' @keywords internal
 addmin <- function(x, jitter=1e-3) {
-
     x + abs(min(x)) + jitter
-
 }
 
 #' compute the shannon entropy from a vector (normalized internally)
@@ -124,50 +122,6 @@ shannon <- function(x) {
 #' @return N_eff in base e
 #' @export
 neff <- function(x) exp(shannon(x))
-
-#' One way of generating a sparse, positive definite [square] correlation matrix
-#'
-#' @param dimension number of rows/cols
-#' @param  sparsity controls probability of sparsity by setting the standard deviation of truncated normal distribution. Lower SD -> higher probability of a draw
-#' @param center correlations distributed around center [default = 0.0]
-#' @export
-sparseSigma <- function(dimension, sparsity=0.6, center=0.0) {
-
-    require(msm) ; require(Matrix)
-    temp <- matrix(0, dimension, dimension)
-    diag(temp) <- 1
-
-    prob <- dimension / dimension^2
-
-    for (i in 2:dimension) {
-        for (j in 1:(i - 1)) {
-            if ( sample(c(0,1), 1, prob=c(prob, 1-prob)) == 0 ) {
-                temp[i, j] <- rtnorm(1, mean=center, lower=-.99, upper=.99, sd=sparsity)
-                temp[j, i] <- temp[i, j]
-            }
-        }
-    }
-    return(as.matrix(nearPD(temp, corr=TRUE)$mat))
-}
-
-
-#' Jonathan Friedman's described method of computing a correlation matrx
-#'
-#' @param D Dimension
-#' @param p probability that any otu pairs are perfectly correlated
-#' @param var individual variance (same for all OTUs)
-#' @param center average correlation (default 0.0)
-sparseSigma_JF <- function(D, p, var=1, center=0.0) {
-    require(Matrix)
-    Sigma <- diag(D) + center
-    diag(Sigma) <- diag(Sigma) - center
-    n <- (D*(D-1))/2
-    Sigma[lower.tri(Sigma)] <- sample(c(0,1), n, prob=c(1-p,p), replace=TRUE)
-    signs <- sample(c(-1,1), n, prob=c(.5,.5), replace=TRUE)
-    Sigma[lower.tri(Sigma)] <- Sigma[lower.tri(Sigma)] * signs
-    Sigma[upper.tri(Sigma)] <- Sigma[lower.tri(Sigma)]
-    return(nearPD(Sigma, corr=TRUE)$mat)
-}
 
 
 #' keywords internal

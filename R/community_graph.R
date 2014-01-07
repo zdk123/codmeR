@@ -96,6 +96,11 @@ graph2prec <- function(Graph, u=0.1, v=0.3, method) {
 make_graph <- function(method, D, e, enforce=TRUE, ...) {
     if (e < round(D/2)) stop('Number of edges e must be bigger than 1/2 D')
     if (e>((D-1)*D)/2) stop('Number of edges e must smaller than D(D-1)/2')
+    
+    method <- switch(method, cluster = "cluster", erdos_renyi = "erdos_renyi", 
+                       hub = "hub", scale_free = "scale_free", 
+                       block = "block", band = "band", 
+                       stop(paste("Error: graph method ", method, "not supported")))
     graphgen <- match.fun(method)
     Graph    <- graphgen(D, e=e, ...)
     attr(Graph, "graph") <- method

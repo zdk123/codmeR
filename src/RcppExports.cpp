@@ -5,6 +5,22 @@
 
 using namespace Rcpp;
 
+// T
+double T(NumericVector xi, NumericVector xj);
+RcppExport SEXP codmeR_T(SEXP xiSEXP, SEXP xjSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        Rcpp::traits::input_parameter< NumericVector >::type xi(xiSEXP );
+        Rcpp::traits::input_parameter< NumericVector >::type xj(xjSEXP );
+        double __result = T(xi, xj);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
 // fastaitvar
 NumericMatrix fastaitvar(NumericMatrix x);
 RcppExport SEXP codmeR_fastaitvar(SEXP xSEXP) {

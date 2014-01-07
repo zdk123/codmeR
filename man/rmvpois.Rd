@@ -1,9 +1,9 @@
-\name{rmvzinegbin}
-\alias{rmvzinegbin}
-\title{Generate multivariate, negative binomial data,
+\name{rmvpois}
+\alias{rmvpois}
+\title{Generate multivariate poisson data,
 with counts approximately correlated according to Sigma}
 \usage{
-rmvzinegbin(n, mu, Sigma, munbs, ks, ps, ...)
+rmvpois(n, mu, Sigma, ...)
 }
 \arguments{
   \item{n}{number of samples to draw}
@@ -12,18 +12,15 @@ rmvzinegbin(n, mu, Sigma, munbs, ks, ps, ...)
 
   \item{Sigma}{\eqn{DxD} covariance or correlation matrix}
 
-  \item{munbs}{Rate/mean parameter (instead of mu)}
+  \item{lambdas}{supply rate parameter (instead of mu)}
 
-  \item{ks}{shape parameter}
-
-  \item{...}{other arguments to the negative binomial
-  distribution}
+  \item{ps}{probability of zeros (instead of mu)}
 }
 \value{
 \eqn{Dxn} matrix with zi-poisson data
 }
 \description{
-Generate multivariate, negative binomial data, with counts
+Generate multivariate poisson data, with counts
 approximately correlated according to Sigma
 }
 
