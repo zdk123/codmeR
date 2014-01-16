@@ -239,6 +239,7 @@ multivnomial <- function(n, mu, Sigma) {
 #' @param cor a symmetric correlation matrix
 #' @param sds standard deviations of the resulting covariance.
 #' @return Covariance matrix of sample dimension as cor
+#' @export
 cor2cov <- function(cor, sds) {
     if (length(sds) != length(diag(cor))) stop("inputs are of mismatched dimension")
     cor * sds * rep(sds, each=nrow(cor))

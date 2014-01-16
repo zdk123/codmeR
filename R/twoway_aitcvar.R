@@ -6,8 +6,7 @@ proportionality_filter <- function(data, normfun=function(x) x, nboots=1333,
                                     mar=2, n.core=1, ...) {
     
     .astat <- function(data, indices)   triu(aitvar(data[indices,,drop=FALSE]))
-    .pstat <- function(data, indices)   triu(aitvar(apply(data[indices,], 2, 
-                                                function(x) sample(x))))
+    .pstat <- function(data, indices)   triu(aitvar(apply(data[indices,], 2, function(x) sample(x))))
 
     if (mar == 1) data <- t(data)
     d <- ncol(data)
@@ -16,7 +15,7 @@ proportionality_filter <- function(data, normfun=function(x) x, nboots=1333,
     pvals <- pval(pobjs)
     pmat    <- triu2diag(pvals)
     rownames(pmat) <- colnames(pmat) <- colnames(data)
-    pmat
+    structure(list(T=triu2diag(pobjs$t0), pvals=pmat), class='TAV')
 }
 
 
@@ -27,19 +26,20 @@ triu2diag <- function(x, diagval=0) {
     e <- length(x)
     n <- .5 * (sqrt(8*e + 1)+1)
     mat <- matrix(0, n, n)
-    mat[lower.tri(mat)] <- x
+    mat[upper.tri(mat)] <- x
     mat <- mat + t(mat)
     diag(mat) <- diagval
     mat
 }
 
+#' @export
 pval <- function(x) {
     UseMethod('pval')
 }
 
 #' @keywords internal
 #' @importFrom boot boot
-tavboot <- function(data, statisticboot=astat, statisticperm, R, ncpus, ...) {
+tavboot <- function(data, statisticboot, statisticperm, R, ncpus=1, ...) {
     res     <- boot::boot(data, statisticboot, R=R, parallel="multicore", ncpus=ncpus, ...)
     null_av <- boot::boot(data, statisticperm, sim='permutation', R=R, parallel="multicore", ncpus=ncpus)
     class(res) <- 'list'
@@ -83,7 +83,7 @@ aitvar <- function(x, ...) {
 #' @export
 aitvar.default <- function(x, y) {
     if (length(x) != length(y)) stop('Error: data must be of same dimension')
-    T(x, y)
+    var(log(x/y))
 }
 
 #' compute aitchison variation of a matrix
@@ -91,6 +91,7 @@ aitvar.default <- function(x, y) {
 #' @import Rcpp
 #' @export
 aitvar.matrix <- function(x, mar=2) {
+    if (mar == 2) x <- t(x)
     avmat <- fastaitvar(x)
     colnames(avmat) <- rownames(avmat) <- colnames(x)
     avmat
@@ -101,5 +102,57 @@ aitvar.data.frame <- function(x, mar=2, direction='pos') {
     aitvar(as.matrix(x))
 }
 
+#' @export
+hamming.dist <- function(x, ...) {
+    UseMethod('hamming.dist')
+}
 
+#' @export
+hamming.dist.default <- function(x, y) {
+    sum(x != y)
+}
+
+#' @export
+hamming.dist.matrix <- function(x, mar=2) {
+    if (mar == 1) x <- t(x)
+    HamdistMat(x)
+}
+
+#' @export
+hamming.dist.data.frame <- function(x, mar=2) {
+    hamming.dist(as.matrix(x), mar)
+}
+
+#' @export
+cooccurance <- function(x, ...) {
+    UseMethod('cooccurance')
+}
+
+#' @export
+cooccurance.default <- function(x, y) {
+    sum((sign(x) + sign(y)) == 2)
+}
+
+#' @export
+cooccurance.matrix <- function(x, mar=2) {
+    if (mar == 1) x <- t(x)
+    cooccurMat(x)
+}
+
+
+#' @export
+coabsence <- function(x, ...) {
+    UseMethod('coabsence')
+}
+
+#' @export
+coabsence.default <- function(x, y) {
+    sum((sign(x) + sign(y)) == 0)
+}
+
+#' @export
+coabsence.matrix <- function(x, mar=2) {
+    if (mar == 1) x <- t(x)
+    coabsenceMat(x)
+}
 

@@ -21,10 +21,10 @@ norm_to_total <- function(x) x/sum(x)
 
 #' @export
 clr <- function(x, ...) {
-    UseMethod('clr')
+    UseMethod('clr', x)
 }
 
-#' @keywords internal
+#' @export
 clr.default <- function(x.f, tol=.Machine$double.eps) {
 # Center-log-ratio transform
 # Args:
@@ -35,9 +35,14 @@ clr.default <- function(x.f, tol=.Machine$double.eps) {
     ifelse(zero, LOG - mean(LOG)/mean(zero), 0.0)
 }
 
-#' @keywords internal
+#' @export
 clr.matrix <- function(x.f, mar=2, ...) {
     apply(x.f, mar, clr, ...)
+}
+
+#' @export
+clr.data.frame <- function(x.f, mar=2, ...) {
+    clr(as.matrix(x.f, mar))
 }
 
 

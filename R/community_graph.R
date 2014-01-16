@@ -101,7 +101,7 @@ make_graph <- function(method, D, e, enforce=TRUE, ...) {
                        hub = "hub", scale_free = "scale_free", 
                        block = "block", band = "band", 
                        stop(paste("Error: graph method ", method, "not supported")))
-    graphgen <- match.fun(method)
+    graphgen <- get(method)
     Graph    <- graphgen(D, e=e, ...)
     attr(Graph, "graph") <- method
     

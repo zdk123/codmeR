@@ -9,8 +9,9 @@ Authors@R: c(person("Zachary", "Kurtz", role = c("aut", "cre"),
     c("aut")), person("Emily", "Miraldi", role=c("aut")), person("Richard",
     "Bonneau", role=c("aut")))
 Depends:
-    R (>= 3.0.2),
-    Rcpp (>= 0.10.4.5)
-LinkingTo: Rcpp
+    R (>= 3.0.0),
+    Rcpp (>= 0.10.4.5),
+    RcppArmadillo (>= 0.3.0.0)
+LinkingTo: Rcpp, RcppArmadillo
 License: # getOptions('devtools.desc.license')
 LazyData: true
