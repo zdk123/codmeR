@@ -45,21 +45,9 @@ sim_counts <- function(n = 1, mu, Sigma=NULL, method='ZINB', negscheme=exp, targ
 
     if (method == 'MVLN') { 
         require(MASS)
-        corpar=as.matrix(Sigma)
-        Y <- negscheme(mvrnorm(n, mu, Sigma))
+        corpar <- as.matrix(Sigma)
+        Y      <- negscheme(mvrnorm(n, mu, Sigma))
     
-# Deprecated function
-#   } else if (method == "Poi") {
-#        require(corcounts)
-#        margins <- rep("Poi", length(mu))
-#        corstr <- 'unstr'
-#        
-#        if (length(Sigma) == 0) {
-#            corpar <- unstructured(length(mu))
-#        } else {
-#            corpar <- as.matrix(Sigma)
-#        }
-#       Y <- rcounts(N=n, margins=margins, mu=mu, corstr=corstr, corpar=corpar)
 
 # TODO: implement non-zero inflated versions
     } else if (method == "MN") {
@@ -77,7 +65,7 @@ sim_counts <- function(n = 1, mu, Sigma=NULL, method='ZINB', negscheme=exp, targ
     } else if (method == "NegBin") {
         Y <- rmvnegbin(n, mu, Sigma, ...)
     } else {
-        stop(paste("Error: method ", methodm, " not supported", sep=""))
+        stop(paste("Error: method ", method, " not supported", sep=""))
     }
 
     list(data=as.matrix(Y), empcor=cor(Y), incor=as.matrix(Sigma))

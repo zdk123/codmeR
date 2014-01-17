@@ -13,9 +13,9 @@ proportionality_filter <- function(data, normfun=function(x) x, nboots=1333,
     n <- nrow(data)
     pobjs <- tavboot(data, .astat, .pstat, R=nboots, ncpus=n.core, ...)
     pvals <- pval(pobjs)
-    pmat    <- triu2diag(pvals)
+    pmat    <- triu2diag(pvals$pvals)
     rownames(pmat) <- colnames(pmat) <- colnames(data)
-    structure(list(T=triu2diag(pobjs$t0), pvals=pmat), class='TAV')
+    structure(list(T.signed=triu2diag(pvals$sT), pvals=pmat), class='TAV')
 }
 
 
@@ -68,11 +68,13 @@ pval.tavboot <- function(x, sided='both', mar=2) {
     # calc whether center of mass is above or below the mean
     bs_above <- unlist(lapply(1:nparams, function(i) 
                     length(which(x$t[, i] > tmeans[i]))))
-    pval <- ifelse(bs_above > x$R/2, 2*(1-bs_above/x$R), 2*bs_above/x$R)
-    pval[pval > 1] <- 1
-    pval[outofrange] <- NaN
-   # triu2diag(pval)
-   pval
+    is_above <- bs_above > x$R/2
+    signedAV <- x$t0
+    signedAV[is_above] <- -signedAV[is_above]
+    pvals    <- ifelse(is_above, 2*(1-bs_above/x$R), 2*bs_above/x$R)
+    pvals[pvals > 1]  <- 1
+    pvals[outofrange] <- NaN
+    list(sT=signedAV, pvals=pvals)
 }
 
 #' @export
@@ -93,13 +95,13 @@ aitvar.default <- function(x, y) {
 aitvar.matrix <- function(x, mar=2) {
     if (mar == 2) x <- t(x)
     avmat <- fastaitvar(x)
-    colnames(avmat) <- rownames(avmat) <- colnames(x)
+    colnames(avmat) <- rownames(avmat) <- rownames(x)
     avmat
 }
 
 #' @export
 aitvar.data.frame <- function(x, mar=2, direction='pos') {
-    aitvar(as.matrix(x))
+    aitvar(as.matrix(x), mar)
 }
 
 #' @export

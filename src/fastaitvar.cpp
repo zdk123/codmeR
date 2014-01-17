@@ -28,7 +28,3 @@ arma::mat fastaitvar(arma::mat A) {
     arma::mat Alog = log(A);
     return (distsq(Alog) - square(sumdiff(Alog))/k) / (k-1);
 }
-
-
-
-
